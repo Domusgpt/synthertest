@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Preset Generator - Standalone Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: white;
+        }
+        .container {
+            background: #1a1a1a;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+        .sparkle {
+            color: #fbbf24;
+            font-size: 1.5em;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #333;
+            background: #0a0a0a;
+            color: white;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .examples {
+            margin: 30px 0;
+            text-align: center;
+        }
+        .example-chip {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 20px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .example-chip:hover {
+            background: #333;
+            border-color: #6366f1;
+            transform: translateY(-2px);
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #0a0a0a;
+            border-radius: 10px;
+            border: 2px solid #333;
+            display: none;
+        }
+        .result.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .parameter {
+            margin: 10px 0;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid #6366f1;
+        }
+        .label {
+            color: #a78bfa;
+            font-weight: bold;
+        }
+        .value {
+            color: #10b981;
+            font-family: monospace;
+            font-size: 16px;
+        }
+        .preset-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #333;
+        }
+        .preset-name {
+            font-size: 24px;
+            color: #6366f1;
+            margin-bottom: 5px;
+        }
+        .preset-desc {
+            color: #9ca3af;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="sparkle">✨</span> AI Preset Generator</h1>
+        
+        <p style="text-align: center; color: #9ca3af; margin-bottom: 30px;">
+            Describe the sound you want, and watch the AI generate synthesizer parameters!
+        </p>
+        
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="description" 
+                placeholder="Try: warm bass with reverb"
+                value="warm bass with reverb"
+            />
+        </div>
+        
+        <button onclick="generatePreset()">
+            Generate Preset ✨
+        </button>
+        
+        <div class="examples">
+            <p style="color: #9ca3af; margin-bottom: 15px;">Click an example to try:</p>
+            <span class="example-chip" onclick="setExample('deep sub bass')">deep sub bass</span>
+            <span class="example-chip" onclick="setExample('bright lead synth')">bright lead synth</span>
+            <span class="example-chip" onclick="setExample('ambient pad with delay')">ambient pad</span>
+            <span class="example-chip" onclick="setExample('aggressive wobble bass')">wobble bass</span>
+            <span class="example-chip" onclick="setExample('vintage electric piano')">electric piano</span>
+            <span class="example-chip" onclick="setExample('ethereal space pad')">space pad</span>
+        </div>
+        
+        <div id="result" class="result">
+            <div class="preset-header">
+                <div class="preset-name" id="preset-name"></div>
+                <div class="preset-desc" id="preset-desc"></div>
+            </div>
+            <div id="preset-details"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Inline preset generator
+        class LocalPresetGenerator {
+            constructor() {
+                this.frequencyMap = {
+                    'bass': 110, 'sub': 55, 'low': 220, 'mid': 440,
+                    'high': 880, 'treble': 1760, 'lead': 660, 'pad': 330
+                };
+                this.waveformMap = {
+                    'sine': 0, 'square': 1, 'triangle': 2, 'sawtooth': 3,
+                    'saw': 3, 'noise': 4, 'pulse': 5, 'wavetable': 6
+                };
+                this.characterMap = {
+                    'warm': { cutoff: 800, resonance: 0.2 },
+                    'bright': { cutoff: 3000, resonance: 0.4 },
+                    'dark': { cutoff: 500, resonance: 0.1 },
+                    'harsh': { cutoff: 2500, resonance: 0.8 },
+                    'soft': { cutoff: 1000, resonance: 0.1 },
+                    'aggressive': { cutoff: 2000, resonance: 0.7 },
+                    'mellow': { cutoff: 600, resonance: 0.2 },
+                    'sharp': { cutoff: 4000, resonance: 0.6 }
+                };
+                this.envelopeMap = {
+                    'pluck': { attack: 0.001, decay: 0.05, sustain: 0.0, release: 0.1 },
+                    'pad': { attack: 0.8, decay: 0.3, sustain: 0.8, release: 2.0 },
+                    'lead': { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.3 },
+                    'stab': { attack: 0.001, decay: 0.1, sustain: 0.3, release: 0.05 },
+                    'swell': { attack: 2.0, decay: 0.5, sustain: 0.7, release: 1.0 }
+                };
+                this.effectsMap = {
+                    'dry': { reverb: 0.0, delay: 0.0 },
+                    'wet': { reverb: 0.7, delay: 0.4 },
+                    'spacey': { reverb: 0.9, delay: 0.6 },
+                    'reverb': { reverb: 0.6, delay: 0.2 },
+                    'echo': { reverb: 0.3, delay: 0.5 },
+                    'delay': { reverb: 0.2, delay: 0.5 }
+                };
+            }
+
+            generatePreset(description) {
+                const words = description.toLowerCase().split(/\s+/);
+                
+                let preset = {
+                    preset_name: this.generateName(description),
+                    preset_description: `Generated from: "${description}"`,
+                    parameters: {
+                        oscillators: [{
+                            type: 0, frequency: 440, detune: 0,
+                            volume: 0.8, pan: 0, wavetableIndex: 0,
+                            wavetablePosition: 0.5
+                        }],
+                        filter: { cutoff: 1000, resonance: 0.3, type: 0 },
+                        envelope: { attack: 0.1, decay: 0.2, sustain: 0.7, release: 0.5 },
+                        effects: { reverb_mix: 0.3, delay_time: 0.25, delay_feedback: 0.3 }
+                    }
+                };
+
+                words.forEach(word => {
+                    if (this.frequencyMap[word]) {
+                        preset.parameters.oscillators[0].frequency = this.frequencyMap[word];
+                    }
+                    if (this.waveformMap[word]) {
+                        preset.parameters.oscillators[0].type = this.waveformMap[word];
+                    }
+                    if (this.characterMap[word]) {
+                        preset.parameters.filter.cutoff = this.characterMap[word].cutoff;
+                        preset.parameters.filter.resonance = this.characterMap[word].resonance;
+                    }
+                    if (this.envelopeMap[word]) {
+                        Object.assign(preset.parameters.envelope, this.envelopeMap[word]);
+                    }
+                    if (this.effectsMap[word]) {
+                        preset.parameters.effects.reverb_mix = this.effectsMap[word].reverb;
+                        preset.parameters.effects.delay_time = this.effectsMap[word].delay;
+                        preset.parameters.effects.delay_feedback = this.effectsMap[word].delay * 0.8;
+                    }
+                });
+
+                if (description.includes('bass') || description.includes('sub')) {
+                    preset.parameters.oscillators[0].type = 3;
+                    preset.parameters.filter.type = 0;
+                }
+                if (description.includes('lead')) {
+                    preset.parameters.oscillators[0].type = 1;
+                    preset.parameters.filter.resonance = Math.max(preset.parameters.filter.resonance, 0.4);
+                }
+
+                return preset;
+            }
+
+            generateName(description) {
+                const words = description.split(/\s+/);
+                if (words.length <= 3) {
+                    return words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                }
+                return words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') + '...';
+            }
+        }
+
+        const generator = new LocalPresetGenerator();
+
+        function setExample(text) {
+            document.getElementById('description').value = text;
+            generatePreset();
+        }
+        
+        function generatePreset() {
+            const description = document.getElementById('description').value;
+            if (!description) return;
+            
+            const preset = generator.generatePreset(description);
+            const params = preset.parameters;
+            const osc = params.oscillators[0];
+            
+            // Update header
+            document.getElementById('preset-name').textContent = preset.preset_name;
+            document.getElementById('preset-desc').textContent = preset.preset_description;
+            
+            // Format parameters
+            const waveforms = ['Sine', 'Square', 'Triangle', 'Sawtooth', 'Noise', 'Pulse', 'Wavetable'];
+            
+            let html = `
+                <div class="parameter">
+                    <span class="label">Frequency</span>
+                    <span class="value">${osc.frequency} Hz</span>
+                </div>
+                <div class="parameter">
+                    <span class="label">Waveform</span>
+                    <span class="value">${waveforms[osc.type]}</span>
+                </div>
+                <div class="parameter">
+                    <span class="label">Filter Cutoff</span>
+                    <span class="value">${params.filter.cutoff} Hz</span>
+                </div>
+                <div class="parameter">
+                    <span class="label">Resonance</span>
+                    <span class="value">${(params.filter.resonance * 100).toFixed(0)}%</span>
+                </div>
+                <div class="parameter">
+                    <span class="label">Attack</span>
+                    <span class="value">${params.envelope.attack}s</span>
+                </div>
+                <div class="parameter">
+                    <span class="label">Decay</span>
+                    <span class="value">${params.envelope.decay}s</span>
+                </div>
+                <div class="parameter">
+                    <span class="label">Sustain</span>
+                    <span class="value">${(params.envelope.sustain * 100).toFixed(0)}%</span>
+                </div>
+                <div class="parameter">
+                    <span class="label">Release</span>
+                    <span class="value">${params.envelope.release}s</span>
+                </div>
+                <div class="parameter">
+                    <span class="label">Reverb Mix</span>
+                    <span class="value">${(params.effects.reverb_mix * 100).toFixed(0)}%</span>
+                </div>
+                <div class="parameter">
+                    <span class="label">Delay</span>
+                    <span class="value">${params.effects.delay_time}s @ ${(params.effects.delay_feedback * 100).toFixed(0)}%</span>
+                </div>
+            `;
+            
+            document.getElementById('preset-details').innerHTML = html;
+            document.getElementById('result').classList.add('show');
+        }
+        
+        // Auto-generate on load
+        window.onload = () => generatePreset();
+        
+        // Generate on Enter key
+        document.getElementById('description').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') generatePreset();
+        });
+    </script>
+</body>
+</html>

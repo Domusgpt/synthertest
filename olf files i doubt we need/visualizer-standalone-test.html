@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visualizer Standalone Test</title>
+    <meta charset="UTF-8">
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden;
+            background: #000;
+        }
+        iframe { 
+            width: 100vw; 
+            height: 100vh; 
+            border: none; 
+            display: block;
+        }
+        .info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            z-index: 100;
+        }
+    </style>
+    <script>
+        // Polyfill for any missing console methods to prevent errors
+        if (typeof window.openMCPConsole === 'undefined') {
+            window.openMCPConsole = function() {
+                console.log('openMCPConsole called but not available');
+            };
+        }
+        
+        // Handle any global errors
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.message, e.filename, e.lineno);
+        });
+    </script>
+</head>
+<body>
+    <div class="info">
+        Visualizer Standalone Test<br>
+        <small>Check console for errors</small>
+    </div>
+    <iframe id="visualizer-frame" src="Visualizer files/index.html"></iframe>
+    
+    <script>
+        const iframe = document.getElementById('visualizer-frame');
+        
+        // Wait for iframe to load
+        iframe.onload = function() {
+            console.log('Visualizer iframe loaded');
+            
+            // Try to send test messages to the visualizer
+            setTimeout(() => {
+                console.log('Sending test parameter update...');
+                iframe.contentWindow.postMessage({
+                    type: 'updateParameter',
+                    parameter: 'dimension',
+                    value: 4.5
+                }, '*');
+            }, 2000);
+        };
+        
+        // Listen for messages from the visualizer
+        window.addEventListener('message', function(event) {
+            console.log('Message from visualizer:', event.data);
+        });
+    </script>
+</body>
+</html>

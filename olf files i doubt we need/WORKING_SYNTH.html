@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 HyperAV Working Synthesizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0014, #1a0030, #2a0040);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .container {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(45deg, rgba(148, 0, 211, 0.3), rgba(0, 255, 255, 0.3));
+            border-radius: 15px;
+            border: 2px solid #9400d3;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #9400d3, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #9400d3; }
+            to { text-shadow: 0 0 30px #00ffff; }
+        }
+
+        .main-area {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 15px;
+            height: 100%;
+        }
+
+        .control-panel {
+            background: rgba(26, 0, 48, 0.8);
+            border: 2px solid #9400d3;
+            border-radius: 15px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .center-area {
+            display: grid;
+            grid-template-rows: 2fr 1fr;
+            gap: 15px;
+        }
+
+        .xy-pad {
+            background: linear-gradient(45deg, rgba(148, 0, 211, 0.2), rgba(0, 255, 255, 0.2));
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            position: relative;
+            cursor: crosshair;
+            overflow: hidden;
+        }
+
+        .xy-pad-pointer {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #00ffff, #9400d3);
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease;
+            box-shadow: 0 0 20px #00ffff;
+        }
+
+        .keyboard {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2px;
+            background: rgba(26, 0, 48, 0.8);
+            border: 2px solid #9400d3;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .key {
+            width: 40px;
+            height: 120px;
+            background: linear-gradient(180deg, #f8f8f8, #e0e0e0);
+            border: 2px solid #333;
+            border-radius: 0 0 8px 8px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .key.black {
+            width: 25px;
+            height: 80px;
+            background: linear-gradient(180deg, #333, #000);
+            color: white;
+            margin: 0 -12px;
+            z-index: 2;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .key:hover {
+            transform: translateY(2px);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+
+        .key.active {
+            background: linear-gradient(180deg, #00ffff, #9400d3);
+            transform: translateY(4px);
+            box-shadow: 0 0 25px #00ffff;
+        }
+
+        .knob-group {
+            margin-bottom: 25px;
+        }
+
+        .knob-group h3 {
+            color: #00ffff;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .knob {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #9400d3, #00ffff, #9400d3);
+            border: 3px solid #333;
+            position: relative;
+            cursor: pointer;
+            margin: 10px;
+            display: inline-block;
+        }
+
+        .knob::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            width: 3px;
+            height: 20px;
+            background: white;
+            border-radius: 2px;
+            transform: translateX(-50%);
+            transform-origin: center 25px;
+        }
+
+        .knob-label {
+            text-align: center;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            color: #ccc;
+        }
+
+        .analysis-bars {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 20px 0;
+        }
+
+        .bar {
+            width: 30px;
+            background: linear-gradient(180deg, #00ffff, #9400d3);
+            border-radius: 15px 15px 0 0;
+            transition: height 0.1s ease;
+            min-height: 5px;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .status.success { background: rgba(0, 255, 0, 0.2); color: #00ff00; }
+        .status.error { background: rgba(255, 0, 0, 0.2); color: #ff0000; }
+        .status.info { background: rgba(0, 255, 255, 0.2); color: #00ffff; }
+
+        button {
+            background: linear-gradient(45deg, #9400d3, #00ffff);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .main-area {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            
+            .title {
+                font-size: 1.8rem;
+            }
+            
+            .key {
+                width: 30px;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">🎵 HyperAV Synthesizer 🎵</div>
+            <div id="status" class="status info">Click to enable audio and start playing!</div>
+            <button onclick="initializeAudio()">🔊 Enable Audio</button>
+        </div>
+
+        <div class="main-area">
+            <!-- Left Panel - Controls -->
+            <div class="control-panel">
+                <div class="knob-group">
+                    <h3>🔊 Volume</h3>
+                    <div class="knob" data-param="volume" data-value="0.5"></div>
+                    <div class="knob-label">Master</div>
+                </div>
+
+                <div class="knob-group">
+                    <h3>🎛️ Filter</h3>
+                    <div class="knob" data-param="cutoff" data-value="0.5"></div>
+                    <div class="knob-label">Cutoff</div>
+                    <div class="knob" data-param="resonance" data-value="0.3"></div>
+                    <div class="knob-label">Resonance</div>
+                </div>
+
+                <div class="knob-group">
+                    <h3>📈 Envelope</h3>
+                    <div class="knob" data-param="attack" data-value="0.1"></div>
+                    <div class="knob-label">Attack</div>
+                    <div class="knob" data-param="decay" data-value="0.3"></div>
+                    <div class="knob-label">Decay</div>
+                    <div class="knob" data-param="sustain" data-value="0.7"></div>
+                    <div class="knob-label">Sustain</div>
+                    <div class="knob" data-param="release" data-value="0.5"></div>
+                    <div class="knob-label">Release</div>
+                </div>
+
+                <div class="analysis-bars">
+                    <div class="bar" id="bass-bar" style="height: 20px;"></div>
+                    <div class="bar" id="mid-bar" style="height: 30px;"></div>
+                    <div class="bar" id="high-bar" style="height: 25px;"></div>
+                    <div class="bar" id="amp-bar" style="height: 40px;"></div>
+                </div>
+            </div>
+
+            <!-- Center Panel - XY Pad & Keyboard -->
+            <div class="center-area">
+                <div class="xy-pad" id="xyPad">
+                    <div class="xy-pad-pointer" id="xyPointer" style="left: 50%; top: 50%;"></div>
+                </div>
+
+                <div class="keyboard" id="keyboard">
+                    <div class="key" data-note="60">C</div>
+                    <div class="key black" data-note="61">C#</div>
+                    <div class="key" data-note="62">D</div>
+                    <div class="key black" data-note="63">D#</div>
+                    <div class="key" data-note="64">E</div>
+                    <div class="key" data-note="65">F</div>
+                    <div class="key black" data-note="66">F#</div>
+                    <div class="key" data-note="67">G</div>
+                    <div class="key black" data-note="68">G#</div>
+                    <div class="key" data-note="69">A</div>
+                    <div class="key black" data-note="70">A#</div>
+                    <div class="key" data-note="71">B</div>
+                    <div class="key" data-note="72">C</div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Presets & Effects -->
+            <div class="control-panel">
+                <div class="knob-group">
+                    <h3>🎚️ Effects</h3>
+                    <div class="knob" data-param="reverb" data-value="0.2"></div>
+                    <div class="knob-label">Reverb</div>
+                    <div class="knob" data-param="delay" data-value="0.1"></div>
+                    <div class="knob-label">Delay</div>
+                </div>
+
+                <div class="knob-group">
+                    <h3>🌊 Waveform</h3>
+                    <button onclick="setWaveform('sine')">Sine</button>
+                    <button onclick="setWaveform('square')">Square</button>
+                    <button onclick="setWaveform('sawtooth')">Saw</button>
+                    <button onclick="setWaveform('triangle')">Triangle</button>
+                </div>
+
+                <div class="knob-group">
+                    <h3>🎯 Presets</h3>
+                    <button onclick="loadPreset('bass')">🔊 Bass</button>
+                    <button onclick="loadPreset('lead')">🎸 Lead</button>
+                    <button onclick="loadPreset('pad')">🌌 Pad</button>
+                    <button onclick="loadPreset('pluck')">🎵 Pluck</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio System
+        let audioContext = null;
+        let oscillators = {};
+        let masterGain = null;
+        let filterNode = null;
+        let currentWaveform = 'sine';
+        let synthParams = {
+            volume: 0.5,
+            cutoff: 1000,
+            resonance: 3,
+            attack: 0.1,
+            decay: 0.3,
+            sustain: 0.7,
+            release: 0.5,
+            reverb: 0.2,
+            delay: 0.1
+        };
+
+        // Initialize Audio System
+        function initializeAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create master gain
+                masterGain = audioContext.createGain();
+                masterGain.gain.value = synthParams.volume;
+                
+                // Create filter
+                filterNode = audioContext.createBiquadFilter();
+                filterNode.type = 'lowpass';
+                filterNode.frequency.value = synthParams.cutoff;
+                filterNode.Q.value = synthParams.resonance;
+                
+                // Connect audio chain
+                filterNode.connect(masterGain);
+                masterGain.connect(audioContext.destination);
+                
+                updateStatus('✅ Audio system initialized! Ready to play.', 'success');
+                
+                // Start animation loop
+                startVisualization();
+                
+            } catch (error) {
+                updateStatus('❌ Audio initialization failed: ' + error.message, 'error');
+            }
+        }
+
+        // Note Functions
+        function noteToFrequency(note) {
+            return 440 * Math.pow(2, (note - 69) / 12);
+        }
+
+        function playNote(note) {
+            if (!audioContext) {
+                updateStatus('⚠️ Please enable audio first!', 'error');
+                return;
+            }
+
+            try {
+                // Create oscillator
+                const osc = audioContext.createOscillator();
+                const gainEnv = audioContext.createGain();
+                
+                osc.type = currentWaveform;
+                osc.frequency.value = noteToFrequency(note);
+                
+                // ADSR Envelope
+                const now = audioContext.currentTime;
+                gainEnv.gain.setValueAtTime(0, now);
+                gainEnv.gain.linearRampToValueAtTime(synthParams.volume * 0.8, now + synthParams.attack);
+                gainEnv.gain.linearRampToValueAtTime(synthParams.volume * synthParams.sustain, now + synthParams.attack + synthParams.decay);
+                
+                // Connect audio chain
+                osc.connect(gainEnv);
+                gainEnv.connect(filterNode);
+                
+                // Start and store
+                osc.start(now);
+                oscillators[note] = { osc, gainEnv };
+                
+                updateStatus(`🎵 Playing note ${note} (${noteToFrequency(note).toFixed(1)} Hz)`, 'success');
+                
+            } catch (error) {
+                updateStatus('❌ Note play failed: ' + error.message, 'error');
+            }
+        }
+
+        function stopNote(note) {
+            if (oscillators[note]) {
+                const { osc, gainEnv } = oscillators[note];
+                const now = audioContext.currentTime;
+                
+                // Release envelope
+                gainEnv.gain.cancelScheduledValues(now);
+                gainEnv.gain.setValueAtTime(gainEnv.gain.value, now);
+                gainEnv.gain.linearRampToValueAtTime(0, now + synthParams.release);
+                
+                osc.stop(now + synthParams.release);
+                delete oscillators[note];
+            }
+        }
+
+        // UI Event Handlers
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function setWaveform(type) {
+            currentWaveform = type;
+            updateStatus(`🌊 Waveform set to ${type}`, 'success');
+        }
+
+        function loadPreset(name) {
+            const presets = {
+                bass: { cutoff: 300, resonance: 8, attack: 0.01, decay: 0.1, sustain: 0.9, release: 0.3 },
+                lead: { cutoff: 2000, resonance: 5, attack: 0.05, decay: 0.2, sustain: 0.6, release: 0.4 },
+                pad: { cutoff: 800, resonance: 2, attack: 0.5, decay: 0.8, sustain: 0.8, release: 1.0 },
+                pluck: { cutoff: 1500, resonance: 3, attack: 0.01, decay: 0.05, sustain: 0.3, release: 0.2 }
+            };
+            
+            if (presets[name]) {
+                Object.assign(synthParams, presets[name]);
+                updateParameters();
+                updateStatus(`🎯 Loaded ${name} preset`, 'success');
+            }
+        }
+
+        function updateParameters() {
+            if (filterNode) {
+                filterNode.frequency.value = synthParams.cutoff;
+                filterNode.Q.value = synthParams.resonance;
+            }
+            if (masterGain) {
+                masterGain.gain.value = synthParams.volume;
+            }
+        }
+
+        // XY Pad
+        function setupXYPad() {
+            const xyPad = document.getElementById('xyPad');
+            const pointer = document.getElementById('xyPointer');
+            let isActive = false;
+
+            function updateXY(e) {
+                if (!isActive) return;
+                
+                const rect = xyPad.getBoundingClientRect();
+                const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                const y = Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
+                
+                pointer.style.left = (x * 100) + '%';
+                pointer.style.top = ((1 - y) * 100) + '%';
+                
+                // Map to parameters
+                synthParams.cutoff = 200 + (x * 3800); // 200Hz to 4kHz
+                synthParams.resonance = 1 + (y * 15);   // 1 to 16
+                
+                updateParameters();
+                updateStatus(`🎛️ Filter: ${synthParams.cutoff.toFixed(0)}Hz, Q: ${synthParams.resonance.toFixed(1)}`, 'info');
+            }
+
+            xyPad.addEventListener('mousedown', (e) => { isActive = true; updateXY(e); });
+            xyPad.addEventListener('mousemove', updateXY);
+            xyPad.addEventListener('mouseup', () => isActive = false);
+            xyPad.addEventListener('mouseleave', () => isActive = false);
+            
+            // Touch events
+            xyPad.addEventListener('touchstart', (e) => { isActive = true; updateXY(e.touches[0]); e.preventDefault(); });
+            xyPad.addEventListener('touchmove', (e) => { updateXY(e.touches[0]); e.preventDefault(); });
+            xyPad.addEventListener('touchend', () => isActive = false);
+        }
+
+        // Keyboard
+        function setupKeyboard() {
+            const keyboard = document.getElementById('keyboard');
+            
+            keyboard.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('key')) {
+                    const note = parseInt(e.target.dataset.note);
+                    e.target.classList.add('active');
+                    playNote(note);
+                }
+            });
+            
+            keyboard.addEventListener('mouseup', (e) => {
+                if (e.target.classList.contains('key')) {
+                    const note = parseInt(e.target.dataset.note);
+                    e.target.classList.remove('active');
+                    stopNote(note);
+                }
+            });
+            
+            // Touch events
+            keyboard.addEventListener('touchstart', (e) => {
+                if (e.target.classList.contains('key')) {
+                    const note = parseInt(e.target.dataset.note);
+                    e.target.classList.add('active');
+                    playNote(note);
+                    e.preventDefault();
+                }
+            });
+            
+            keyboard.addEventListener('touchend', (e) => {
+                if (e.target.classList.contains('key')) {
+                    const note = parseInt(e.target.dataset.note);
+                    e.target.classList.remove('active');
+                    stopNote(note);
+                }
+            });
+        }
+
+        // Visualization
+        function startVisualization() {
+            const bars = {
+                bass: document.getElementById('bass-bar'),
+                mid: document.getElementById('mid-bar'),
+                high: document.getElementById('high-bar'),
+                amp: document.getElementById('amp-bar')
+            };
+
+            function animate() {
+                // Simulate audio analysis
+                const time = Date.now() / 1000;
+                const activeNotes = Object.keys(oscillators).length;
+                
+                const bass = 20 + (activeNotes * 20) + (Math.sin(time * 2) * 10);
+                const mid = 30 + (activeNotes * 15) + (Math.sin(time * 3) * 8);
+                const high = 25 + (activeNotes * 10) + (Math.sin(time * 4) * 6);
+                const amp = 15 + (activeNotes * 25) + (Math.sin(time * 1.5) * 15);
+                
+                bars.bass.style.height = Math.max(5, bass) + 'px';
+                bars.mid.style.height = Math.max(5, mid) + 'px';
+                bars.high.style.height = Math.max(5, high) + 'px';
+                bars.amp.style.height = Math.max(5, amp) + 'px';
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setupXYPad();
+            setupKeyboard();
+            
+            // Auto-initialize audio on first user interaction
+            document.addEventListener('click', () => {
+                if (!audioContext) {
+                    initializeAudio();
+                }
+            }, { once: true });
+            
+            updateStatus('🎵 Ready! Click "Enable Audio" then play the keyboard or use the XY pad!', 'info');
+        });
+    </script>
+</body>
+</html>

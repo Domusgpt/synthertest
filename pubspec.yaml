@@ -1,0 +1,96 @@
+name: synther
+description: Cross-platform audio synthesizer with 4D visualization
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Core dependencies
+  provider: ^6.1.1
+  webview_flutter: ^4.4.2
+  webview_flutter_android: ^3.12.1
+  webview_flutter_wkwebview: ^3.9.4
+  path_provider: ^2.1.1
+  shared_preferences: ^2.2.2
+  
+  # FFI for native audio engine
+  ffi: ^2.1.0
+  
+  # HTTP for LLM presets
+  http: ^1.1.0
+  
+  # Audio permissions
+  permission_handler: ^11.0.1
+  
+  # Platform detection
+  universal_platform: ^1.0.1
+  
+  # File picker for granular synthesis
+  file_picker: ^6.1.1
+  
+  # JS interop for web
+  js: ^0.6.7
+  
+  # Audio recording for mic input
+  flutter_sound: ^9.2.13
+  logger: ^2.0.2
+  
+  # Firebase backend services
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
+  firebase_analytics: ^11.0.0
+  firebase_storage: ^12.0.0
+  firebase_messaging: ^15.0.0
+  
+  # In-app purchases
+  in_app_purchase: ^3.1.11
+  
+  # AdMob integration
+  google_mobile_ads: ^5.0.0
+  
+  # Additional utilities
+  connectivity_plus: ^6.0.0
+  package_info_plus: ^8.0.0
+  device_info_plus: ^10.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  ffigen: ^11.0.0
+
+ffigen:
+  name: SynthEngineBindings
+  description: Bindings for the native synthesizer engine
+  output: 'lib/core/synth_engine_bindings_generated.dart'
+  headers:
+    entry-points:
+      - 'native/include/synth_engine_api.h'
+
+flutter:
+  uses-material-design: true
+  
+  # Assets for visualizer
+  assets:
+    - assets/visualizer/
+    - assets/visualizer/core/
+    - assets/visualizer/js/
+    - assets/visualizer/css/
+    - assets/visualizer/sound/
+    - assets/visualizer/sound/modules/
+    
+  # Fonts (if needed)
+  # fonts:
+  #   - family: Roboto
+  #     fonts:
+  #       - asset: fonts/Roboto-Regular.ttf
+  #       - asset: fonts/Roboto-Bold.ttf
+  #         weight: 700
+  #       - asset: fonts/Roboto-Light.ttf
+  #         weight: 300
