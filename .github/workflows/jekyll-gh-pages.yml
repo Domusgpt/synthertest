@@ -34,7 +34,7 @@ jobs:
         uses: actions/jekyll-build-pages@v1
         with:
           source:  ./build/web
-          destination: ./_site
+          destination: 'https://github.com/Domusgpt/synthertest.git/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
